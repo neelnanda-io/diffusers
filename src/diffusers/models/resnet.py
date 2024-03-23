@@ -289,7 +289,9 @@ class ResnetBlock2D(nn.Module):
         conv_2d_out_channels = conv_2d_out_channels or out_channels
         self.conv2 = conv_cls(out_channels, conv_2d_out_channels, kernel_size=3, stride=1, padding=1)
 
-        self.nonlinearity = get_activation(non_linearity)
+        self.input_nonlinearity = get_activation(non_linearity)
+        self.mid_nonlinearity = get_activation(non_linearity)
+        self.time_nonlinearity = get_activation(non_linearity)
 
         self.upsample = self.downsample = None
         if self.up:
@@ -330,9 +332,10 @@ class ResnetBlock2D(nn.Module):
         hidden_states = input_tensor
 
         hidden_states = self.norm1(hidden_states)
-        hidden_states = self.nonlinearity(hidden_states)
+        hidden_states = self.input_nonlinearity(hidden_states)
 
         if self.upsample is not None:
+            raise ValueError("Doesn't matter")
             # upsample_nearest_nhwc fails with large batch sizes. see https://github.com/huggingface/diffusers/issues/984
             if hidden_states.shape[0] >= 64:
                 input_tensor = input_tensor.contiguous()
@@ -340,6 +343,7 @@ class ResnetBlock2D(nn.Module):
             input_tensor = self.upsample(input_tensor)
             hidden_states = self.upsample(hidden_states)
         elif self.downsample is not None:
+            raise ValueError("Doesn't matter")
             input_tensor = self.downsample(input_tensor)
             hidden_states = self.downsample(hidden_states)
 
@@ -347,7 +351,7 @@ class ResnetBlock2D(nn.Module):
 
         if self.time_emb_proj is not None:
             if not self.skip_time_act:
-                temb = self.nonlinearity(temb)
+                temb = self.time_nonlinearity(temb)
             temb = self.time_emb_proj(temb)[:, :, None, None]
 
         if self.time_embedding_norm == "default":
@@ -355,6 +359,7 @@ class ResnetBlock2D(nn.Module):
                 hidden_states = hidden_states + temb
             hidden_states = self.norm2(hidden_states)
         elif self.time_embedding_norm == "scale_shift":
+            raise ValueError("Doesn't matter")
             if temb is None:
                 raise ValueError(
                     f" `temb` should not be None when `time_embedding_norm` is {self.time_embedding_norm}"
@@ -363,9 +368,11 @@ class ResnetBlock2D(nn.Module):
             hidden_states = self.norm2(hidden_states)
             hidden_states = hidden_states * (1 + time_scale) + time_shift
         else:
+            # raise ValueError("Doesn't matter")
+            # Time embedding norm group, used in the VAE
             hidden_states = self.norm2(hidden_states)
 
-        hidden_states = self.nonlinearity(hidden_states)
+        hidden_states = self.mid_nonlinearity(hidden_states)
 
         hidden_states = self.dropout(hidden_states)
         hidden_states = self.conv2(hidden_states)

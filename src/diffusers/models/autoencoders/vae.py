@@ -293,7 +293,7 @@ class Decoder(nn.Module):
 
         upscale_dtype = next(iter(self.up_blocks.parameters())).dtype
         if self.training and self.gradient_checkpointing:
-
+            raise ValueError("Doesn't matter")
             def create_custom_forward(module):
                 def custom_forward(*inputs):
                     return module(*inputs)

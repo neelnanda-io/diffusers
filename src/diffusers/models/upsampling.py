@@ -172,7 +172,6 @@ class Upsample2D(nn.Module):
                 hidden_states = F.interpolate(hidden_states, scale_factor=2.0, mode="nearest")
             else:
                 hidden_states = F.interpolate(hidden_states, size=output_size, mode="nearest")
-
         # If the input is bfloat16, we cast back to bfloat16
         if dtype == torch.bfloat16:
             hidden_states = hidden_states.to(dtype)
@@ -183,7 +182,6 @@ class Upsample2D(nn.Module):
                 hidden_states = self.conv(hidden_states)
             else:
                 hidden_states = self.Conv2d_0(hidden_states)
-
         return hidden_states
 
 

@@ -348,8 +348,10 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
                 hidden_states = self.proj_in(hidden_states)
 
         elif self.is_input_vectorized:
+            raise ValueError("Doesn't matter")
             hidden_states = self.latent_image_embedding(hidden_states)
         elif self.is_input_patches:
+            raise ValueError("Doesn't matter")
             height, width = hidden_states.shape[-2] // self.patch_size, hidden_states.shape[-1] // self.patch_size
             hidden_states = self.pos_embed(hidden_states)
 
@@ -371,7 +373,7 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
 
         for block in self.transformer_blocks:
             if self.training and self.gradient_checkpointing:
-
+                raise ValueError("Doesn't matter")
                 def create_custom_forward(module, return_dict=None):
                     def custom_forward(*inputs):
                         if return_dict is not None:
@@ -396,8 +398,8 @@ class Transformer2DModel(ModelMixin, ConfigMixin):
             else:
                 hidden_states = block(
                     hidden_states,
-                    attention_mask=attention_mask,
-                    encoder_hidden_states=encoder_hidden_states,
+                    attention_mask,
+                    encoder_hidden_states,
                     encoder_attention_mask=encoder_attention_mask,
                     timestep=timestep,
                     cross_attention_kwargs=cross_attention_kwargs,

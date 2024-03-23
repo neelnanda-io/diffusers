@@ -735,7 +735,7 @@ class UNetMidBlock2D(nn.Module):
         hidden_states = self.resnets[0](hidden_states, temb)
         for attn, resnet in zip(self.attentions, self.resnets[1:]):
             if attn is not None:
-                hidden_states = attn(hidden_states, temb=temb)
+                hidden_states = attn(hidden_states, temb)
             hidden_states = resnet(hidden_states, temb)
 
         return hidden_states
@@ -851,7 +851,7 @@ class UNetMidBlock2DCrossAttn(nn.Module):
         hidden_states = self.resnets[0](hidden_states, temb)
         for attn, resnet in zip(self.attentions, self.resnets[1:]):
             if self.training and self.gradient_checkpointing:
-
+                raise ValueError("Doesn't matter")
                 def create_custom_forward(module, return_dict=None):
                     def custom_forward(*inputs):
                         if return_dict is not None:
@@ -864,7 +864,7 @@ class UNetMidBlock2DCrossAttn(nn.Module):
                 ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
                 hidden_states = attn(
                     hidden_states,
-                    encoder_hidden_states=encoder_hidden_states,
+                    encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
@@ -879,7 +879,7 @@ class UNetMidBlock2DCrossAttn(nn.Module):
             else:
                 hidden_states = attn(
                     hidden_states,
-                    encoder_hidden_states=encoder_hidden_states,
+                    encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
@@ -1249,7 +1249,7 @@ class CrossAttnDownBlock2D(nn.Module):
 
         for i, (resnet, attn) in enumerate(blocks):
             if self.training and self.gradient_checkpointing:
-
+                raise ValueError("Doesn't matter")
                 def create_custom_forward(module, return_dict=None):
                     def custom_forward(*inputs):
                         if return_dict is not None:
@@ -1276,9 +1276,11 @@ class CrossAttnDownBlock2D(nn.Module):
                 )[0]
             else:
                 hidden_states = resnet(hidden_states, temb)
+                # Hello!
+                # print(hidden_states.shape)
                 hidden_states = attn(
                     hidden_states,
-                    encoder_hidden_states=encoder_hidden_states,
+                    encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
@@ -2499,6 +2501,7 @@ class CrossAttnUpBlock2D(nn.Module):
 
             # FreeU: Only operate on the first two stages
             if is_freeu_enabled:
+                raise ValueError("Doesn't matter")
                 hidden_states, res_hidden_states = apply_freeu(
                     self.resolution_idx,
                     hidden_states,
@@ -2509,10 +2512,14 @@ class CrossAttnUpBlock2D(nn.Module):
                     b2=self.b2,
                 )
 
+            # print("Unet up block!")
+            # print(hidden_states.shape)
             hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
+            # print(hidden_states.shape)
+            # print()
 
             if self.training and self.gradient_checkpointing:
-
+                raise ValueError("Doesn't matter")
                 def create_custom_forward(module, return_dict=None):
                     def custom_forward(*inputs):
                         if return_dict is not None:
@@ -2541,7 +2548,7 @@ class CrossAttnUpBlock2D(nn.Module):
                 hidden_states = resnet(hidden_states, temb)
                 hidden_states = attn(
                     hidden_states,
-                    encoder_hidden_states=encoder_hidden_states,
+                    encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
@@ -2734,7 +2741,7 @@ class UpDecoderBlock2D(nn.Module):
 
     def forward(self, hidden_states: torch.FloatTensor, temb: Optional[torch.FloatTensor] = None) -> torch.FloatTensor:
         for resnet in self.resnets:
-            hidden_states = resnet(hidden_states, temb=temb)
+            hidden_states = resnet(hidden_states, temb)
 
         if self.upsamplers is not None:
             for upsampler in self.upsamplers:
